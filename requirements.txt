@@ -1,0 +1,10 @@
+openai
+python-dotenv
+apscheduler
+requests
+colorama
+PyYAML
+flask
+python-docx
+wechatpy
+cryptography

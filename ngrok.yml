@@ -1,0 +1,12 @@
+version: "2"
+# 如果启动时提示未登录，请取消下面注释并填入你的 Token
+# authtoken: YOUR_NGROK_AUTH_TOKEN
+
+tunnels:
+  feishu:
+    addr: 3000
+    proto: http
+    # hostname: your-static-domain.ngrok-free.app # 如果你有固定域名，可以在这里配置
+  wecom:
+    addr: 3001
+    proto: http

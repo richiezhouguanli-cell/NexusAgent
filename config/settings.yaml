@@ -1,0 +1,13 @@
+# 预留配置文件
+system:
+  name: NexusAgent
+
+skills:
+  FileManager:
+    root_path: "/Users/richie/Documents/01 国际风控"
+    shortcuts:
+      "电脑": "/"
+      "根目录": "/"
+      "桌面": "/Users/richie/Desktop"
+      "文档": "/Users/richie/Documents"
+      "当前": "."
