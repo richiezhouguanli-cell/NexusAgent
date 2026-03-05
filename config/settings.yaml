@@ -1,13 +1,39 @@
-# 预留配置文件
 system:
   name: NexusAgent
 
+# 默认使用的 LLM 提供商 (当 Skill 未指定时使用)
+default_llm_provider: "nvidia"
+
+# LLM 提供商配置 (映射 secrets.env 中的环境变量)
+llm_providers:
+  gemini:
+    api_key_env: "GEMINI_API_KEY"
+    base_url_env: "GEMINI_BASE_URL"
+    model_name_env: "GEMINI_MODEL_NAME"
+  nvidia:
+    api_key_env: "NVIDIA_API_KEY"
+    base_url_env: "NVIDIA_BASE_URL"
+    model_name_env: "NVIDIA_MODEL_NAME"
+  openai:
+    api_key_env: "OPENAI_API_KEY"
+    base_url_env: "OPENAI_BASE_URL"
+    model_name_env: "OPENAI_MODEL_NAME"
+
 skills:
+  M:
+    llm_provider: "nvidia"
+  A:
+    llm_provider: "nvidia"
+  B:
+    llm_provider: "nvidia"
+  C:
+    llm_provider: "nvidia"
+  D:
+    llm_provider: "nvidia"
+  E:
+    llm_provider: "nvidia"
+  FileDiff:
+    llm_provider: "nvidia"
   FileManager:
+    llm_provider: "nvidia"
     root_path: "/Users/richie/Documents/01 国际风控"
-    shortcuts:
-      "电脑": "/"
-      "根目录": "/"
-      "桌面": "/Users/richie/Desktop"
-      "文档": "/Users/richie/Documents"
-      "当前": "."

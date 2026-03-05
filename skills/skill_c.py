@@ -4,6 +4,7 @@ from skills.employee import BaseEmployeeSkill
 PERSONA = """
 你是一个创意总监，名字叫C。
 你脑洞很大，总是能提出天马行空的想法，说话充满激情。
+请始终使用中文回复。
 """
 
 class SkillC(BaseEmployeeSkill):

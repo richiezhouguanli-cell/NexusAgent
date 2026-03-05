@@ -3,6 +3,7 @@ import time
 import threading
 import os
 import datetime
+import re
 
 class BaseEmployeeSkill(BaseSkill):
     """员工通用基类"""
@@ -65,9 +66,11 @@ class BaseEmployeeSkill(BaseSkill):
 
         # --- 1. 处理任务启动指令 ---
         # 格式: START_TASK: [秒数] | [任务内容]
-        if message.startswith("START_TASK:"):
+        # 优化: 使用正则查找指令，防止 M 在指令前添加多余文本
+        task_match = re.search(r"START_TASK:(.*)", message, re.DOTALL)
+        if task_match:
             try:
-                _, params = message.split(":", 1)
+                params = task_match.group(1)
                 # 兼容旧格式，虽然秒数不再决定执行时间，但为了不破坏 M 的指令格式，我们还是解析它
                 if "|" in params:
                     _, task_content = params.split("|", 1)
@@ -98,9 +101,10 @@ class BaseEmployeeSkill(BaseSkill):
                 return res
 
         # 格式: START_LOOP: [次数] | [间隔] | [任务内容]
-        if message.startswith("START_LOOP:"):
+        loop_match = re.search(r"START_LOOP:(.*)", message, re.DOTALL)
+        if loop_match:
             try:
-                _, params = message.split(":", 1)
+                params = loop_match.group(1)
                 count_str, interval_str, task_content = params.split("|", 2)
                 
                 self.task_state = {

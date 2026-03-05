@@ -65,64 +65,86 @@ def main():
     # 如果有连接器，使用广播回调；否则不配置回调
     scheduler = TaskScheduler(bus, output_handler=broadcast_output if active_connectors else None)
 
-    # 2. 配置多 AI 模型
-    # --- Gemini Client (默认) ---
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    gemini_base_url = os.getenv("GEMINI_BASE_URL")
-    gemini_model_name = os.getenv("GEMINI_MODEL_NAME")
+    # 2. 配置多 AI 模型 (基于 settings.yaml)
+    llm_clients = {}
+    llm_providers_config = app_config.get("llm_providers", {})
     
-    gemini_client, gemini_model = LLMFactory.create_client(gemini_api_key, gemini_base_url, gemini_model_name)
-    print(f"✅ Gemini Client ({gemini_model_name}) initialized.")
-    SystemLogger.info(f"Gemini Client ({gemini_model_name}) initialized.")
+    for provider_name, config in llm_providers_config.items():
+        api_key = os.getenv(config.get("api_key_env", ""))
+        base_url = os.getenv(config.get("base_url_env", ""))
+        model_name = os.getenv(config.get("model_name_env", ""))
+        
+        if api_key:
+             # 简单的有效性检查 (针对 NVIDIA)
+             if provider_name == "nvidia" and "nvapi-" not in api_key:
+                 continue
+             
+             client, model = LLMFactory.create_client(api_key, base_url, model_name)
+             llm_clients[provider_name] = (client, model)
+             SystemLogger.info(f"✅ {provider_name} Client ({model_name}) initialized.")
+             print(f"✅ {provider_name} Client ({model_name}) initialized.")
 
-    # --- NVIDIA Client (可选) ---
-    nvidia_api_key = os.getenv("NVIDIA_API_KEY")
-    nvidia_base_url = os.getenv("NVIDIA_BASE_URL")
-    nvidia_model_name = os.getenv("NVIDIA_MODEL_NAME")
+    default_provider = app_config.get("default_llm_provider", "gemini")
+
+    def get_llm(skill_name):
+        """根据配置为 Skill 获取对应的 LLM 客户端"""
+        skill_conf = skill_configs.get(skill_name, {})
+        provider = skill_conf.get("llm_provider", default_provider)
+        
+        if provider in llm_clients:
+            return llm_clients[provider]
+        
+        # 如果指定的不存在，尝试使用默认的
+        if default_provider in llm_clients:
+            return llm_clients[default_provider]
+            
+        # 如果默认的也不存在，使用任意一个可用的
+        if llm_clients:
+            return list(llm_clients.values())[0]
+            
+        return None, None
     
-    if nvidia_api_key and "nvapi-" in nvidia_api_key:
-        nvidia_client, nvidia_model = LLMFactory.create_client(nvidia_api_key, nvidia_base_url, nvidia_model_name)
-        print(f"✅ NVIDIA Client ({nvidia_model_name}) initialized.")
-        SystemLogger.info(f"NVIDIA Client ({nvidia_model_name}) initialized.")
-    else:
-        print(f"⚠️ NVIDIA Client 未配置或 Key 无效，所有 Skill 将回退使用 Gemini。")
-        SystemLogger.info("NVIDIA Client 未配置，回退使用 Gemini。")
-        # 如果 NVIDIA key 未配置，则回退到使用 Gemini
-        nvidia_client, nvidia_model = gemini_client, gemini_model
-
     # 3. 初始化 Skills
-    # M (Manager) - 使用 NVIDIA
+    # M (Manager)
+    client, model = get_llm("M")
     m_config = skill_configs.get("M", {})
-    m_mr = ManagerSkill("M", m_config, nvidia_client, nvidia_model, bus, scheduler)
+    m_mr = ManagerSkill("M", m_config, client, model, bus, scheduler)
     bus.register_skill(m_mr)
 
     # 员工实例化 (分别配置)
-    # 1. A (技术) - 使用 NVIDIA
-    skill_a = SkillA("A", skill_configs.get("A", {}), nvidia_client, nvidia_model, bus)
+    # 1. A (技术)
+    client, model = get_llm("A")
+    skill_a = SkillA("A", skill_configs.get("A", {}), client, model, bus)
     bus.register_skill(skill_a)
 
-    # 2. B (文案) - 使用 NVIDIA
-    skill_b = SkillB("B", skill_configs.get("B", {}), nvidia_client, nvidia_model, bus)
+    # 2. B (文案)
+    client, model = get_llm("B")
+    skill_b = SkillB("B", skill_configs.get("B", {}), client, model, bus)
     bus.register_skill(skill_b)
 
-    # 3. C (创意) - 使用 NVIDIA
-    skill_c = SkillC("C", skill_configs.get("C", {}), nvidia_client, nvidia_model, bus)
+    # 3. C (创意)
+    client, model = get_llm("C")
+    skill_c = SkillC("C", skill_configs.get("C", {}), client, model, bus)
     bus.register_skill(skill_c)
 
-    # 4. D (公关) - 使用 NVIDIA
-    skill_d = SkillD("D", skill_configs.get("D", {}), nvidia_client, nvidia_model, bus)
+    # 4. D (公关)
+    client, model = get_llm("D")
+    skill_d = SkillD("D", skill_configs.get("D", {}), client, model, bus)
     bus.register_skill(skill_d)
 
-    # 5. E (财务) - 使用 NVIDIA
-    skill_e = SkillE("E", skill_configs.get("E", {}), nvidia_client, nvidia_model, bus)
+    # 5. E (财务)
+    client, model = get_llm("E")
+    skill_e = SkillE("E", skill_configs.get("E", {}), client, model, bus)
     bus.register_skill(skill_e)
 
     # 6. 通用工具 - 文件对比
-    tool_diff = SkillToolFileDiff("FileDiff", {}, nvidia_client, nvidia_model, bus)
+    client, model = get_llm("FileDiff")
+    tool_diff = SkillToolFileDiff("FileDiff", {}, client, model, bus)
     bus.register_skill(tool_diff)
 
     # 7. 通用工具 - 文件管理
-    tool_fm = SkillToolFileManager("FileManager", skill_configs.get("FileManager", {}), nvidia_client, nvidia_model, bus)
+    client, model = get_llm("FileManager")
+    tool_fm = SkillToolFileManager("FileManager", skill_configs.get("FileManager", {}), client, model, bus)
     bus.register_skill(tool_fm)
 
     print("\n" + "="*40)
