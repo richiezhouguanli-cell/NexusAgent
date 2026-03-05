@@ -37,6 +37,23 @@ class BaseFileSkill(BaseSkill):
             else:
                 resolved_path = os.path.join(self.root_path, path_str)
         
+        # --- 安全沙箱检查 (新增) ---
+        # 允许的范围：配置的 root_path 和 当前项目目录
+        abs_root = os.path.abspath(self.root_path)
+        abs_project = os.path.abspath(os.getcwd())
+        abs_resolved = os.path.abspath(resolved_path)
+        
+        is_safe = False
+        for safe_path in [abs_root, abs_project]:
+            # 检查解析后的路径是否以安全路径开头
+            if abs_resolved.startswith(safe_path):
+                is_safe = True
+                break
+        
+        if not is_safe:
+            # 如果路径跑出了安全范围，强制重置为 root_path (或者可以返回错误信息，这里选择安全回退)
+            return self.root_path
+        
         # 2. 智能回退逻辑 (修复 M 的幻觉)
         if not os.path.exists(resolved_path):
             clean_input = path_str
