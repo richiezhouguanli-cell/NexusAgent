@@ -71,9 +71,9 @@ skills:
   # 文件管理工具
   FileManager:
     llm_provider: "nvidia"
-    root_path: "/Users/richie/Documents/01 国际风控" # 限制文件访问的根目录
+    root_path: "/path/to/your/documents" # 限制文件访问的根目录
     shortcuts: # 路径别名映射
-      "桌面": "/Users/richie/Desktop"
+      "桌面": "/Users/username/Desktop"
 ```
 
 ---
